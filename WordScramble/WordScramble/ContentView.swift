@@ -11,6 +11,7 @@ struct ContentView: View {
     @State private var usedWords = [String]()
     @State private var rootWord = ""
     @State private var newWord = ""
+    @State private var score = 0
     
     @State private var errorTitle = ""
     @State private var errorMessage = ""
@@ -19,6 +20,10 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             List {
+                Section {
+                    Text("Score: \(score)")
+                }
+                
                 Section {
                     TextField("Enter your word", text: $newWord)
                         .textInputAutocapitalization(.never)
@@ -40,6 +45,11 @@ struct ContentView: View {
                 Button("OK", role: .cancel) { }
             } message: {
                 Text(errorMessage)
+            }
+            .toolbar {
+                Button("New word") {
+                    startGame()
+                }
             }
         }
     }
@@ -63,10 +73,17 @@ struct ContentView: View {
             return
         }
         
+        guard isValid(word: answer) else {
+            wordError(title: "No no no", error: "Try longer word. Or did you try to enter the root itself???")
+            return
+        }
+        
         withAnimation {
             usedWords.insert(answer, at: 0)
             newWord = ""
         }
+        
+        score += answer.count * usedWords.count
     }
     
     func startGame() {
@@ -74,6 +91,8 @@ struct ContentView: View {
             if let startWords = try? String(contentsOf: startWordsURL) {
                 let allWords = startWords.components(separatedBy: "\n")
                 rootWord = allWords.randomElement() ?? "silkworm"
+                usedWords.removeAll()
+                score = 0
                 return
             }
         }
@@ -106,6 +125,14 @@ struct ContentView: View {
         let misspelledRange = checker.rangeOfMisspelledWord(in: word, range: range, startingAt: 0, wrap: false, language: "en")
         
         return misspelledRange.location == NSNotFound
+    }
+    
+    func isValid(word: String) -> Bool {
+        if word.count < 3 || word == rootWord {
+            return false
+        }
+        
+        return true
     }
     
     func wordError(title: String, error: String) {
