@@ -28,6 +28,10 @@ struct ContentView: View {
     @State private var countries = ["Estonia", "France", "Germany", "Ireland", "Italy", "Nigeria", "Poland", "Russia", "Spain", "UK", "US"].shuffled()
     @State private var correctAnswer = Int.random(in: 0...2)
     
+    @State private var spinAmount = 0.0
+    @State private var flagsTapped = [false, false, false]
+    @State private var flagsChosen = [false, false, false]
+    
     var body: some View {
         ZStack {
             RadialGradient(stops: [
@@ -55,9 +59,26 @@ struct ContentView: View {
                     ForEach(0..<3) { number in
                         Button {
                             flagTapped(number)
-                        } label: {
-                             FlagImage(number: number, countries: countries)
+                            withAnimation(.interpolatingSpring(stiffness: 5, damping: 2)) {
+                                flagsTapped[number].toggle()
+                                spinAmount += 360
+                            }
+                            
+                            withAnimation(.easeInOut(duration: 2)) {
+                                for i in 0..<flagsChosen.count {
+                                    if i != number {
+                                        flagsChosen[i].toggle()
+                                    }
+                                }
+                            }
                         }
+                        label: {
+                            FlagImage(number: number, countries: countries)
+                        }
+                        .opacity(flagsChosen[number] ? 0.25 : 1)
+                        .scaleEffect(flagsChosen[number] ? .zero : 1)
+                        .rotation3DEffect(flagsTapped[number] ? .degrees(spinAmount) : .zero,
+                                          axis: (x: 0, y: 1, z: 0))
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -119,6 +140,8 @@ struct ContentView: View {
     func askQuestion() {
         countries.shuffle()
         correctAnswer = Int.random(in: 0...2)
+        flagsTapped = [false, false, false]
+        flagsChosen = [false, false, false]
     }
 }
 
